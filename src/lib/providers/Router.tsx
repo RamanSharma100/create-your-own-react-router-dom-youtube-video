@@ -36,6 +36,7 @@ export const Router: React.FC<IRouterProps> = ({ children }) => {
 
   const push = (path: string, state?: State) => {
     window.history.pushState(state, '', path);
+    setPath(path);
   };
 
   const handlePopState = (e: PopStateEvent) => {

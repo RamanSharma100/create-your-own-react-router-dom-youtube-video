@@ -1,19 +1,38 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from '../hooks/useRouter';
 import { Route } from '../providers/Router';
 
 interface IRoutesProps {
   children?: React.ReactNode;
-  routes: Route[];
+  routes?: Route[];
 }
 
-const Routes: React.FC<IRoutesProps> = ({ routes }) => {
+const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
   const { path, setRoutes, getRoutes } = useRouter();
   const [routesLoaded, setRoutesLoaded] = useState<boolean>(false);
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null);
 
   const loadRoutes = () => {
-    setRoutes(routes);
+    setRoutes(routes || []);
+  };
+
+  const processRoutes = () => {
+    const tempRoutes: Route[] = [];
+    React.Children.forEach(children, (child) => {
+      if (!React.isValidElement(child)) return;
+
+      let { path } = child.props;
+
+      if (path) {
+        path = path.startsWith('/') ? path : '/' + path;
+        tempRoutes.push({
+          path,
+          component: child.props.component,
+        });
+      }
+    });
+
+    setRoutes(tempRoutes);
   };
 
   const matchRoute = (path: string, _routes: Route[]) => {
@@ -30,12 +49,18 @@ const Routes: React.FC<IRoutesProps> = ({ routes }) => {
 
   useEffect(() => {
     setRoutesLoaded(false);
-    loadRoutes();
+    if (children) {
+      processRoutes();
+    } else if (routes) {
+      loadRoutes();
+    }
 
     const route: Route | null = matchRoute(path, getRoutes());
 
     if (route) {
       setCurrentRoute(route);
+    } else {
+      setCurrentRoute(null);
     }
 
     setRoutesLoaded(true);
