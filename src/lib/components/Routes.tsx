@@ -7,6 +7,12 @@ interface IRoutesProps {
   routes?: Route[];
 }
 
+export type RouteDefaultProps = {
+  history?: History;
+  searchParams?: URLSearchParams;
+  params?: Record<string, string>;
+};
+
 const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
   const { path, setRoutes, getRoutes } = useRouter();
   const [routesLoaded, setRoutesLoaded] = useState<boolean>(false);
@@ -23,11 +29,14 @@ const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
 
       let { path } = child.props;
 
+      const params = path.match(/:\w+/g);
+
       if (path) {
         path = path.startsWith('/') ? path : '/' + path;
         tempRoutes.push({
           path,
           component: child.props.component,
+          params,
         });
       }
     });
@@ -37,13 +46,36 @@ const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
 
   const matchRoute = (path: string, _routes: Route[]) => {
     return (
-      _routes.find((_route: Route) => {
-        const routePath = _route.path.startsWith('/')
-          ? _route.path
-          : '/' + _route.path;
+      _routes
+        .map((_route: Route) => {
+          const routePath = _route.path.startsWith('/')
+            ? _route.path
+            : '/' + _route.path;
 
-        return routePath.toLowerCase() === path.toLowerCase();
-      }) || null
+          const replacePath = routePath.replace(/:[^\s/]+/g, '([^/]+)');
+
+          const regex = new RegExp(`^${replacePath}$`);
+
+          const match = regex.exec(path);
+
+          if (match) {
+            const paramNames = (_route.path.match(/:[^\s/]+/g) || []).map(
+              (param) => param.slice(1)
+            );
+            const params: Record<string, string> = {};
+            paramNames.forEach((name, index) => {
+              params[name] = match[index + 1];
+            });
+
+            return {
+              ..._route,
+              params,
+            };
+          }
+
+          return null;
+        })
+        .filter((r) => r !== null)[0] || null
     );
   };
 
@@ -54,7 +86,6 @@ const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
     } else if (routes) {
       loadRoutes();
     }
-
     const route: Route | null = matchRoute(path, getRoutes());
 
     if (route) {
@@ -69,10 +100,20 @@ const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
   if (!routesLoaded) return null;
 
   if (currentRoute) {
-    const Component = currentRoute.component;
+    const Component = currentRoute.component as React.ComponentType<any>;
+    const searchParams = new URLSearchParams(window.location.search);
+
+    const defaultProps: RouteDefaultProps = {
+      history: window.history,
+      searchParams,
+      params: currentRoute.params,
+    };
+
     if (typeof Component === 'function') {
-      return <Component />;
+      return <Component {...defaultProps} />;
     }
+
+    console.log(typeof Component);
 
     return Component;
   }

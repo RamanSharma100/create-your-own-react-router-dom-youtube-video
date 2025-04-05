@@ -1,6 +1,6 @@
 type RouteProps = {
   path: string;
-  component: () => JSX.Element;
+  component: JSX.Element | Element | React.ComponentType<any>;
 };
 
 const Route: React.FC<RouteProps> = () => null;
