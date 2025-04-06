@@ -1,4 +1,5 @@
 import ParameterizedComponent from './components/ParameterizedComponent';
+import ParameterizedHookComponent from './components/ParameterizedHookComponent';
 import { Link, Route, RouteDefaultProps, Routes } from './lib';
 import { useNavigate } from './lib/hooks/hooks';
 // import { Route } from './lib/providers/Router';
@@ -37,7 +38,7 @@ const App = () => {
         />
         <Route path="/test" component={() => <h1>Welcome to test page</h1>} />
         <Route path="/params/:id" component={ParameterizedComponent} />
-        <Route path="/params/:id/:age" component={ParameterizedComponent} />
+        <Route path="/params/:id/:age" component={ParameterizedHookComponent} />
         <Route
           path="/params/:id/:age/:height"
           component={(props: RouteDefaultProps) => (
