@@ -32,10 +32,28 @@ const App = () => {
       <button onClick={() => navigate.back()}>Go Back</button>
       <Routes>
         <Route path="/" component={() => <h1>Welcome to home page</h1>} />
+        <Route path="/:id" component={ParameterizedComponent} />
         <Route
           path="/contact"
           component={() => <h1>Welcome to contact page</h1>}
         />
+        <Route
+          path="/nested"
+          component={() => <h1>This is nested route top level</h1>}>
+          <Route
+            path="/child"
+            component={() => <h1>This is nested route child level</h1>}>
+            <Route
+              path="/:id"
+              component={({ params }) => (
+                <h1>
+                  This is nested route child level with params{' '}
+                  {JSON.stringify(params)}
+                </h1>
+              )}
+            />
+          </Route>
+        </Route>
         <Route path="/test" component={() => <h1>Welcome to test page</h1>} />
         <Route path="/params/:id" component={ParameterizedComponent} />
         <Route path="/params/:id/:age" component={ParameterizedHookComponent} />

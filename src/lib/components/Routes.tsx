@@ -13,7 +13,10 @@ export type RouteDefaultProps = {
   params?: Record<string, string>;
 };
 
-const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
+const Routes: React.FC<IRoutesProps> = ({
+  routes,
+  children: createdRoutes,
+}) => {
   const { path, setRoutes, getRoutes } = useRouter();
   const [routesLoaded, setRoutesLoaded] = useState<boolean>(false);
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null);
@@ -24,22 +27,40 @@ const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
 
   const processRoutes = () => {
     const tempRoutes: Route[] = [];
-    React.Children.forEach(children, (child) => {
-      if (!React.isValidElement(child)) return;
 
-      let { path } = child.props;
+    const makeRoutes = (allRoutes: React.ReactNode, parentPath = '') => {
+      const sortRoutes = React.Children.toArray(allRoutes).sort((a: any) => {
+        const isParameterized =
+          a?.props?.path?.startsWith('/:') || a?.props?.path?.startsWith(':');
 
-      const params = path.match(/:\w+/g);
+        return isParameterized ? 1 : -1;
+      });
+      sortRoutes.forEach((child) => {
+        if (!React.isValidElement(child)) return;
 
-      if (path) {
-        path = path.startsWith('/') ? path : '/' + path;
-        tempRoutes.push({
-          path,
-          component: child.props.component,
-          params,
-        });
-      }
-    });
+        let { path } = child.props;
+
+        const params = path.match(/:\w+/g);
+
+        if (path) {
+          path = path.startsWith('/') ? path : '/' + path;
+          const fullPath = parentPath + path;
+          tempRoutes.push({
+            path: fullPath,
+            component: child.props.component,
+            params,
+          });
+
+          if (child.props.children) {
+            makeRoutes(child.props.children, fullPath);
+          }
+        }
+      });
+    };
+
+    makeRoutes(createdRoutes);
+
+    console.log('routes', tempRoutes);
 
     setRoutes(tempRoutes);
   };
@@ -81,7 +102,7 @@ const Routes: React.FC<IRoutesProps> = ({ routes, children }) => {
 
   useEffect(() => {
     setRoutesLoaded(false);
-    if (children) {
+    if (createdRoutes) {
       processRoutes();
     } else if (routes) {
       loadRoutes();
